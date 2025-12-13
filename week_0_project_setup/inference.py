@@ -16,9 +16,10 @@ class ColaPredictor:
     def predict(self, text):
         inference_sample = {"sentence": text}
         processed = self.processor.tokenize_data(inference_sample)
+        device = next(self.model.parameters()).device
         logits = self.model(
-            torch.tensor([processed["input_ids"]]),
-            torch.tensor([processed["attention_mask"]]),
+            torch.tensor([processed["input_ids"]]).to(device),
+            torch.tensor([processed["attention_mask"]]).to(device),
         )
         scores = self.softmax(logits[0]).tolist()
         predictions = []
@@ -29,5 +30,5 @@ class ColaPredictor:
 
 if __name__ == "__main__":
     sentence = "The boy is sitting on a bench"
-    predictor = ColaPredictor("./models/epoch=0-step=267.ckpt")
+    predictor = ColaPredictor("./models/epoch=4-step=1340.ckpt")
     print(predictor.predict(sentence))

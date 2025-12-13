@@ -1,0 +1,43 @@
+services:
+  master:
+    image: chrislusf/seaweedfs:latest
+    command: master -ip=master -port=9333
+    ports:
+      - "9333:9333"
+
+  volume:
+    image: chrislusf/seaweedfs:latest
+    command: volume -ip=volume -port=8080 -dir=/data -mserver=master:9333
+    depends_on:
+      - master
+    ports:
+      - "8080:8080"
+    volumes:
+      - volume_data:/data
+
+  filer:
+    image: chrislusf/seaweedfs:latest
+    command: filer -master=master:9333
+    depends_on:
+      - master
+      - volume
+    ports:
+      - "8888:8888"
+    volumes:
+      - filer_data:/data
+
+  s3:
+    image: chrislusf/seaweedfs:latest
+    command: s3 -ip.bind=0.0.0.0 -filer=filer:8888
+    depends_on:
+      - master
+      - filer
+    ports:
+      - "8333:8333"
+    environment:
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: admin123
+
+volumes:
+  volume_data:
+  filer_data:

@@ -1,6 +1,13 @@
 [core]
-    remote = model-store
+    remote = seaweed
 ['remote "storage"']
-    url = gdrive://19JK5AFbqOBlrFVwDHjTrf9uvQFtS0954
+    url = gdrive://1XDk5Y3sxVUVggmFMCqXrhQM_DO2FaL4Z
 ['remote "model-store"']
     url = s3://models-dvc/trained_models/
+['remote "seaweed"']
+    url = s3://dvc-store
+    endpointurl = http://localhost:8333
+    access_key_id = admin
+    secret_access_key = admin123
+    region = us-east-1
+    use_ssl = false

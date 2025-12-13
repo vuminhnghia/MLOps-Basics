@@ -1,5 +1,5 @@
 import torch
-from model import ColaModel
+from week_3_dvc.model import ColaModel
 from data import DataModule
 
 
