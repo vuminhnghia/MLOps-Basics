@@ -130,9 +130,11 @@ dmypy.json
 .vscode/
 */logs/*
 !*/models/**/*.dvc
+*/models/*
 */wandb/*
 */outputs/*
 */multirun/*
+*.ckpt
 
 .DS_Store
 */.DS_Storeweek_6_github_actions/creds.json
