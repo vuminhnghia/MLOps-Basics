@@ -8,6 +8,7 @@ class ColaPredictor:
     def __init__(self, model_path):
         self.model_path = model_path
         self.model = ColaModel.load_from_checkpoint(model_path)
+        self.model.to(torch.device("cpu"))
         self.model.eval()
         self.model.freeze()
         self.processor = DataModule()

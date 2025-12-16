@@ -16,6 +16,8 @@ def convert_model(cfg):
     model_path = f"{root_dir}/models/best-checkpoint.ckpt"
     logger.info(f"Loading pre-trained model from: {model_path}")
     cola_model = ColaModel.load_from_checkpoint(model_path)
+    cola_model = cola_model.to("cpu")
+    cola_model.eval()
 
     data_model = DataModule(
         cfg.model.tokenizer, cfg.processing.batch_size, cfg.processing.max_length
@@ -23,9 +25,10 @@ def convert_model(cfg):
     data_model.prepare_data()
     data_model.setup()
     input_batch = next(iter(data_model.train_dataloader()))
+    device = torch.device("cpu")
     input_sample = {
-        "input_ids": input_batch["input_ids"][0].unsqueeze(0),
-        "attention_mask": input_batch["attention_mask"][0].unsqueeze(0),
+        "input_ids": input_batch["input_ids"][0].unsqueeze(0).to(device),
+        "attention_mask": input_batch["attention_mask"][0].unsqueeze(0).to(device),
     }
 
     # Export the model
@@ -38,7 +41,9 @@ def convert_model(cfg):
         ),  # model input (or a tuple for multiple inputs)
         f"{root_dir}/models/model.onnx",  # where to save the model (can be a file or file-like object)
         export_params=True,
-        opset_version=10,
+        opset_version=17,
+        do_constant_folding=True,  # whether to execute constant folding for optimization
+        verbose=True,
         input_names=["input_ids", "attention_mask"],  # the model's input names
         output_names=["output"],  # the model's output names
         dynamic_axes={

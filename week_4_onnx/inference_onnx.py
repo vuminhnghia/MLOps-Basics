@@ -8,7 +8,7 @@ from utils import timing
 
 class ColaONNXPredictor:
     def __init__(self, model_path):
-        self.ort_session = ort.InferenceSession(model_path)
+        self.ort_session = ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
         self.processor = DataModule()
         self.lables = ["unacceptable", "acceptable"]
 
