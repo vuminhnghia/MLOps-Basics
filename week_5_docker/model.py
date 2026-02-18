@@ -1,12 +1,11 @@
 import torch
 import wandb
-import hydra
 import numpy as np
 import pandas as pd
-import torchmetrics
 import pytorch_lightning as pl
 from transformers import AutoModelForSequenceClassification
-from omegaconf import OmegaConf, DictConfig
+import torchmetrics
+from torchmetrics.classification import F1Score
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -21,17 +20,18 @@ class ColaModel(pl.LightningModule):
             model_name, num_labels=2
         )
         self.num_classes = 2
-        self.train_accuracy_metric = torchmetrics.Accuracy()
-        self.val_accuracy_metric = torchmetrics.Accuracy()
-        self.f1_metric = torchmetrics.F1(num_classes=self.num_classes)
+        self.train_accuracy_metric = torchmetrics.Accuracy(task="binary")
+        self.val_accuracy_metric = torchmetrics.Accuracy(task="binary")
+        self.f1_metric = F1Score(num_classes=self.num_classes, task="binary")
         self.precision_macro_metric = torchmetrics.Precision(
-            average="macro", num_classes=self.num_classes
+            average="macro", num_classes=self.num_classes, task="binary"
         )
         self.recall_macro_metric = torchmetrics.Recall(
-            average="macro", num_classes=self.num_classes
+            average="macro", num_classes=self.num_classes, task="binary"
         )
-        self.precision_micro_metric = torchmetrics.Precision(average="micro")
-        self.recall_micro_metric = torchmetrics.Recall(average="micro")
+        self.precision_micro_metric = torchmetrics.Precision(average="micro", task="binary")
+        self.recall_micro_metric = torchmetrics.Recall(average="micro", task="binary")
+        self.validation_step_outputs = []
 
     def forward(self, input_ids, attention_mask, labels=None):
         outputs = self.bert(
@@ -73,40 +73,45 @@ class ColaModel(pl.LightningModule):
         self.log("valid/precision_micro", precision_micro, prog_bar=True, on_epoch=True)
         self.log("valid/recall_micro", recall_micro, prog_bar=True, on_epoch=True)
         self.log("valid/f1", f1, prog_bar=True, on_epoch=True)
-        return {"labels": labels, "logits": outputs.logits}
+        self.validation_step_outputs.append({"labels": labels, "logits": outputs.logits.detach()})
 
-    def validation_epoch_end(self, outputs):
-        labels = torch.cat([x["labels"] for x in outputs])
-        logits = torch.cat([x["logits"] for x in outputs])
-        preds = torch.argmax(logits, 1)
+    def on_validation_epoch_end(self):
+        outputs = self.validation_step_outputs
+        labels = torch.cat([x["labels"] for x in outputs], dim=0)
+        logits = torch.cat([x["logits"] for x in outputs], dim=0)
+        preds = torch.argmax(logits, dim=1)
+
+        labels = labels.cpu().numpy()
+        logits = logits.cpu().numpy()
+        preds = preds.cpu().numpy()
 
         ## There are multiple ways to track the metrics
         # 1. Confusion matrix plotting using inbuilt W&B method
-        self.logger.experiment.log(
-            {
-                "conf": wandb.plot.confusion_matrix(
-                    probs=logits.numpy(), y_true=labels.numpy()
-                )
-            }
-        )
+        # self.logger.experiment.log(
+        #     {
+        #         "conf": wandb.plot.confusion_matrix(
+        #             probs=logits.numpy(), y_true=labels.numpy()
+        #         )
+        #     }
+        # )
 
         # 2. Confusion Matrix plotting using scikit-learn method
         # wandb.log({"cm": wandb.sklearn.plot_confusion_matrix(labels.numpy(), preds)})
 
         # 3. Confusion Matric plotting using Seaborn
-        # data = confusion_matrix(labels.numpy(), preds.numpy())
-        # df_cm = pd.DataFrame(data, columns=np.unique(labels), index=np.unique(labels))
-        # df_cm.index.name = "Actual"
-        # df_cm.columns.name = "Predicted"
-        # plt.figure(figsize=(7, 4))
-        # plot = sns.heatmap(
-        #     df_cm, cmap="Blues", annot=True, annot_kws={"size": 16}
-        # )  # font size
-        # self.logger.experiment.log({"Confusion Matrix": wandb.Image(plot)})
+        data = confusion_matrix(labels, preds)
+        df_cm = pd.DataFrame(data, columns=np.unique(labels), index=np.unique(labels))
+        df_cm.index.name = "Actual"
+        df_cm.columns.name = "Predicted"
+        plt.figure(figsize=(7, 4))
+        plot = sns.heatmap(
+            df_cm, cmap="Blues", annot=True, annot_kws={"size": 16}
+        )  # font size
+        self.logger.experiment.log({"Confusion Matrix": wandb.Image(plot)})
 
-        # self.logger.experiment.log(
-        #     {"roc": wandb.plot.roc_curve(labels.numpy(), logits.numpy())}
-        # )
+        self.logger.experiment.log(
+            {"roc": wandb.plot.roc_curve(labels, logits)}
+        )
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams["lr"])

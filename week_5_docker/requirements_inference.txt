@@ -1,9 +1,17 @@
-pytorch-lightning==1.2.10
-datasets==1.6.2
-scikit-learn==0.24.2
+pytorch-lightning==2.1.0
+onnx==1.20.0
+datasets==3.2.0
+transformers==4.40.0
+scikit-learn==1.5.2
+numpy>=2.2.0,<2.3.0  # OpenVINO requires numpy<2.3.0
 hydra-core
 omegaconf
 hydra_colorlog
-onnxruntime
+
+# Inference runtimes
+scipy>=1.11.0
+onnxruntime-gpu>=1.19.0  # For ONNX inference with GPU (CUDAExecutionProvider)
+
+# API serving
 fastapi
 uvicorn

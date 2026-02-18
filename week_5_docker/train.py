@@ -11,7 +11,7 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 
 from data import DataModule
-from model import ColaModel
+from week_4_onnx.model import ColaModel
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +24,15 @@ class SamplesVisualisationLogger(pl.Callback):
 
     def on_validation_end(self, trainer, pl_module):
         val_batch = next(iter(self.datamodule.val_dataloader()))
+        device = pl_module.device
         sentences = val_batch["sentence"]
 
-        outputs = pl_module(val_batch["input_ids"], val_batch["attention_mask"])
-        preds = torch.argmax(outputs.logits, 1)
-        labels = val_batch["label"]
+        outputs = pl_module(val_batch["input_ids"].to(device), val_batch["attention_mask"].to(device))
+        preds = torch.argmax(outputs.logits, dim=1)
+        labels = val_batch["label"].to(device)
 
         df = pd.DataFrame(
-            {"Sentence": sentences, "Label": labels.numpy(), "Predicted": preds.numpy()}
+            {"Sentence": sentences, "Label": labels.cpu().numpy(), "Predicted": preds.cpu().numpy()}
         )
 
         wrong_df = df[df["Label"] != df["Predicted"]]
@@ -53,9 +54,8 @@ def main(cfg):
     )
     cola_model = ColaModel(cfg.model.name)
 
-    root_dir = hydra.utils.get_original_cwd()
     checkpoint_callback = ModelCheckpoint(
-        dirpath=f"{root_dir}/models",
+        dirpath="./models",
         filename="best-checkpoint",
         monitor="valid/loss",
         mode="min",
@@ -65,15 +65,15 @@ def main(cfg):
         monitor="valid/loss", patience=3, verbose=True, mode="min"
     )
 
-    wandb_logger = WandbLogger(project="MLOps Basics", entity="raviraja")
+    wandb_logger = WandbLogger(project="MLOps Basics", entity="vuminhnghia-work-hanoi-university-of-science-and-technology")
     trainer = pl.Trainer(
         max_epochs=cfg.training.max_epochs,
         logger=wandb_logger,
         callbacks=[checkpoint_callback, SamplesVisualisationLogger(cola_data), early_stopping_callback],
         log_every_n_steps=cfg.training.log_every_n_steps,
         deterministic=cfg.training.deterministic,
-        # limit_train_batches=cfg.training.limit_train_batches,
-        # limit_val_batches=cfg.training.limit_val_batches,
+        limit_train_batches=cfg.training.limit_train_batches,
+        limit_val_batches=cfg.training.limit_val_batches,
     )
     trainer.fit(cola_model, cola_data)
     wandb.finish()

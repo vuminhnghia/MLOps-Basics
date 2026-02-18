@@ -1,7 +1,9 @@
 from fastapi import FastAPI
+# from inference_tensorrt import ColatensorRTPredictor
 from inference_onnx import ColaONNXPredictor
 app = FastAPI(title="MLOps Basics App")
 
+# predictor = ColatensorRTPredictor("./models/model.trt")
 predictor = ColaONNXPredictor("./models/model.onnx")
 
 @app.get("/")
