@@ -1,0 +1,15 @@
+services:
+    prediction_api:
+        build:
+            context: ../..
+            dockerfile: deploy/tensorrt_gpu/Dockerfile
+        container_name: "inference_container_gpu"
+        ports:
+            - "8000:8000"
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: all
+                          capabilities: [gpu]

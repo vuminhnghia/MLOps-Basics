@@ -1,0 +1,24 @@
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Development/training files
+experimental_notebooks/
+train.py
+convert_model_to_onnx.py
+requirements.txt
+requirements_inference.txt
+dvcfiles/
+
+# Deploy configs (not needed inside container)
+deploy/
+
+# Pre-built TensorRT engines (version-specific, must be rebuilt inside container)
+models/*.trt
+
+# Git
+.git/
+.gitignore
