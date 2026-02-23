@@ -6,9 +6,6 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
-# Copy dependency manifest first to leverage Docker cache
-COPY pyproject.toml /app/
-
 # --- Environment Configurations ---
 # UV_SYSTEM_PYTHON=1: Forces uv to use the system Python
 # UV_PYTHON_DOWNLOADS=never: Prevents uv from trying to download another Python version
@@ -19,13 +16,17 @@ ENV UV_SYSTEM_PYTHON=1 \
     PREDICTOR_TYPE=tensorrt
 
 # --- Dependency Installation ---
-# We use --break-system-packages to bypass PEP 668 (Externally Managed Environment).
-# This is safe and standard practice inside a dedicated Docker container.
-RUN uv pip install --break-system-packages --upgrade "typing-extensions>=4.10.0" && \
-    uv pip install --break-system-packages -e . && \
-    uv pip install --break-system-packages "torch==2.9.1" --index-url https://download.pytorch.org/whl/cu128 && \
-    uv pip install --break-system-packages pycuda
+# Only install what TensorRT inference actually needs.
+# TensorRT uses CUDA directly via pycuda.
+RUN uv pip install --break-system-packages \
+    "transformers>=4.40.0" \
+    "numpy>=2.2.0,<2.3.0" \
+    "scipy>=1.11.0" \
+    "fastapi" \
+    "uvicorn" \
+    "pycuda"
 
+# Pre-download tokenizer weights into image layer for faster container startup
 RUN python -c "from transformers import AutoTokenizer; AutoTokenizer.from_pretrained('google/bert_uncased_L-2_H-128_A-2')"
 
 # Copy the rest of the application source code.

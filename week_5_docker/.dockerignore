@@ -13,6 +13,9 @@ requirements.txt
 requirements_inference.txt
 dvcfiles/
 
+# Tests
+tests/
+
 # Deploy configs (not needed inside container)
 deploy/
 
