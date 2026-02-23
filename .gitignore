@@ -138,4 +138,20 @@ dmypy.json
 
 .DS_Store
 */.DS_Storeweek_6_github_actions/creds.json
+
+# week_5.5_triton — model binaries (copy với prepare_model.sh)
+week_5.5_triton/model_repository/cola_trt/1/model.onnx
+week_5.5_triton/model_repository/cola_trt/1/model.onnx.data
+# TRT engine cache tự sinh bởi Triton khi load lần đầu
+week_5.5_triton/model_repository/cola_trt/1/*.plan
+week_5.5_triton/model_repository/cola_trt/1/*.engine
+week_5.5_triton/model_repository/cola_trt/1/*.trt
 week_6_github_actions/creds.json
+
+# week_5.5_triton — model binaries (copy với prepare_model.sh)
+week_5.5_triton/model_repository/cola_trt/1/model.onnx
+week_5.5_triton/model_repository/cola_trt/1/model.onnx.data
+# TRT engine cache tự sinh bởi Triton khi load lần đầu
+week_5.5_triton/model_repository/cola_trt/1/*.plan
+week_5.5_triton/model_repository/cola_trt/1/*.engine
+week_5.5_triton/model_repository/cola_trt/1/*.trt
