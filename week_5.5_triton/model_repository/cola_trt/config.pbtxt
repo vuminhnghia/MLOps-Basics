@@ -1,25 +1,6 @@
 name: "cola_trt"
-backend: "onnxruntime"
+backend: "tensorrt"
 max_batch_size: 128
-
-# Use TensorRT as execution accelerator (Triton builds & caches the engine on first load)
-optimization {
-  execution_accelerators {
-    gpu_execution_accelerator [
-      {
-        name: "tensorrt"
-        parameters {
-          key: "precision_mode"
-          value: "FP16"
-        }
-        parameters {
-          key: "max_workspace_size_bytes"
-          value: "8589934592"
-        }
-      }
-    ]
-  }
-}
 
 input [
   {

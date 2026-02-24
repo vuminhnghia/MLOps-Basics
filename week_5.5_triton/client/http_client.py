@@ -12,7 +12,7 @@ import numpy as np
 import tritonclient.http as httpclient
 
 
-TRITON_URL = "localhost:8000"
+TRITON_URL = "localhost:8100"
 MODEL_NAME = "cola_pipeline"
 
 SAMPLE_SENTENCES = [
